@@ -25,3 +25,9 @@
     status_code: 201
     body:
       $.title: "测试标题"
+
+- case_name: "断言失败测试-YAML"
+  method: GET
+  url: /posts/1
+  expect:
+    status_code: 666  # 期望 666，实际返回 200，必然失败

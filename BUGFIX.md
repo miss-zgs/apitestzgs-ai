@@ -204,3 +204,677 @@ extract:
 commit 46f76e3
 feat: 接口依赖编排+变量提取替换 & utils优化合并
 ```
+## BUG-004：调试测试-断言失败 - 状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut fa
+
+- **发现时间**：2026-05-29 16:54:14
+- **严重程度**：🔴 高
+- **状态**：❌ 待修复
+
+### 报错位置
+- **用例名称**：调试测试-断言失败
+- **用例文件**：data/调试测试.yaml（步骤 1/1）
+- **触发位置**：utils/assertion.py::assert_status_code (line 16)
+
+### 环境信息
+- **运行环境**：test
+- **Base URL**：https://jsonplaceholder.typicode.com
+- **Python 版本**：3.14.2
+- **操作系统**：Darwin arm64
+
+### 请求信息
+- **Method**：GET
+- **URL**：https://jsonplaceholder.typicode.com/posts/1
+
+### 响应信息
+- **Status Code**：200
+- **耗时**：0.599s
+- **Response Body**：
+  ```json
+  {"userId": 1, "id": 1, "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit", "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"}
+  ```
+
+### 报错信息
+```
+状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+  "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+}
+```
+
+### 完整堆栈
+```
+Traceback (most recent call last):
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/case_executor.py", line 106, in execute_chain
+    assert_by_expect(response, resolve_variables(expect))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/assertion.py", line 97, in assert_by_expect
+    assert_status_code(response, int(expect["status_code"]))
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/assertion.py", line 16, in assert_status_code
+    assert actual == expected_code, (
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+  "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+}
+```
+
+### 上下文变量快照
+```json
+{
+  "timestamp": "1780044853",
+  "tomorrow": "2026-05-30"
+}
+```
+
+### 原因分析
+待分析
+
+### 复现步骤
+```bash
+python3 -m pytest testcases/ -v
+```
+
+---
+## BUG-005：调试测试-断言失败 - 状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut fa
+
+- **发现时间**：2026-05-29 16:54:44
+- **严重程度**：🔴 高
+- **状态**：❌ 待修复
+
+### 报错位置
+- **用例名称**：调试测试-断言失败
+- **用例文件**：data/调试测试.yaml（步骤 1/1）
+- **触发位置**：utils/assertion.py::assert_status_code (line 16)
+
+### 环境信息
+- **运行环境**：test
+- **Base URL**：https://jsonplaceholder.typicode.com
+- **Python 版本**：3.14.2
+- **操作系统**：Darwin arm64
+
+### 请求信息
+- **Method**：GET
+- **URL**：https://jsonplaceholder.typicode.com/posts/1
+
+### 响应信息
+- **Status Code**：200
+- **耗时**：1.732s
+- **Response Body**：
+  ```json
+  {"userId": 1, "id": 1, "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit", "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"}
+  ```
+
+### 报错信息
+```
+状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+  "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+}
+```
+
+### 完整堆栈
+```
+Traceback (most recent call last):
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/case_executor.py", line 106, in execute_chain
+    assert_by_expect(response, resolve_variables(expect))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/assertion.py", line 97, in assert_by_expect
+    assert_status_code(response, int(expect["status_code"]))
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/assertion.py", line 16, in assert_status_code
+    assert actual == expected_code, (
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+  "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+}
+```
+
+### 原因分析
+待分析
+
+### 复现步骤
+```bash
+python3 -m pytest testcases/ -v
+```
+
+---
+## BUG-006：断言失败演示 - 状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut fa
+
+- **发现时间**：2026-05-29 16:57:40
+- **严重程度**：🔴 高
+- **状态**：❌ 待修复
+
+### 报错位置
+- **用例名称**：断言失败演示
+- **用例文件**：data/assertion_failure_demo.yaml（步骤 1/1）
+- **触发位置**：utils/assertion.py::assert_status_code (line 16)
+
+### 环境信息
+- **运行环境**：test
+- **Base URL**：https://jsonplaceholder.typicode.com
+- **Python 版本**：3.14.2
+- **操作系统**：Darwin arm64
+
+### 请求信息
+- **Method**：GET
+- **URL**：https://jsonplaceholder.typicode.com/posts/1
+
+### 响应信息
+- **Status Code**：200
+- **耗时**：0.635s
+- **Response Body**：
+  ```json
+  {"userId": 1, "id": 1, "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit", "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"}
+  ```
+
+### 报错信息
+```
+状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+  "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+}
+```
+
+### 完整堆栈
+```
+Traceback (most recent call last):
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/case_executor.py", line 106, in execute_chain
+    assert_by_expect(response, resolve_variables(expect))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/assertion.py", line 97, in assert_by_expect
+    assert_status_code(response, int(expect["status_code"]))
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/assertion.py", line 16, in assert_status_code
+    assert actual == expected_code, (
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+  "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+}
+```
+
+### 上下文变量快照
+```json
+{
+  "FLIGGY_CLIENT_ID": "filggy_3IEZ27oCuRqPMpQ",
+  "FLIGGY_CLIENT_SECRET": "9F!***",
+  "FLIGGY_ENV": "test-",
+  "timestamp": "1780045060",
+  "tomorrow": "2026-05-30"
+}
+```
+
+### 原因分析
+待分析
+
+### 复现步骤
+```bash
+python3 -m pytest testcases/ -v
+```
+
+---
+## BUG-007：断言失败演示 - 状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut fa
+
+- **发现时间**：2026-05-29 17:03:37
+- **严重程度**：🔴 高
+- **状态**：❌ 待修复
+
+### 报错位置
+- **用例名称**：断言失败演示
+- **用例文件**：data/assertion_failure_demo.yaml（步骤 1/1）
+- **触发位置**：utils/assertion.py::assert_status_code (line 16)
+
+### 环境信息
+- **运行环境**：test
+- **Base URL**：https://jsonplaceholder.typicode.com
+- **Python 版本**：3.14.2
+- **操作系统**：Darwin arm64
+
+### 请求信息
+- **Method**：GET
+- **URL**：https://jsonplaceholder.typicode.com/posts/1
+
+### 响应信息
+- **Status Code**：200
+- **耗时**：0.213s
+- **Response Body**：
+  ```json
+  {"userId": 1, "id": 1, "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit", "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"}
+  ```
+
+### 报错信息
+```
+状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+  "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+}
+```
+
+### 完整堆栈
+```
+Traceback (most recent call last):
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/case_executor.py", line 106, in execute_chain
+    assert_by_expect(response, resolve_variables(expect))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/assertion.py", line 97, in assert_by_expect
+    assert_status_code(response, int(expect["status_code"]))
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/assertion.py", line 16, in assert_status_code
+    assert actual == expected_code, (
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+  "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+}
+```
+
+### 上下文变量快照
+```json
+{
+  "FLIGGY_CLIENT_ID": "filggy_3IEZ27oCuRqPMpQ",
+  "FLIGGY_CLIENT_SECRET": "9F!***",
+  "FLIGGY_ENV": "test-",
+  "timestamp": "1780045406",
+  "tomorrow": "2026-05-30",
+  "post_id": 1,
+  "post_user_id": 1,
+  "post_title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+  "quotation_code": "2247552092###eJyCyDkOAkEMBMDHTDwr291z5SS8YjWXpQ0gIuAXfBlBhSUfE1EJ2FK6dkZIZWQuHrsDkZqrNw56n2E2zWWI+7ANrN3S2qMb55Rpyz1cr/24P9d+nxoU6TBUQ2oneNCqVvL8dRKF6L9zAQU13ChUZMoX9R0lFw=="
+}
+```
+
+### 原因分析
+待分析
+
+### 复现步骤
+```bash
+python3 -m pytest testcases/ -v
+```
+
+---
+## BUG-008：断言失败测试-YAML - 状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut fa
+
+- **发现时间**：2026-05-29 17:13:19
+- **严重程度**：🔴 高
+- **状态**：❌ 待修复
+
+### 报错位置
+- **用例名称**：断言失败测试-YAML
+- **用例文件**：data/test_demo.yaml（步骤 1/1）
+- **触发位置**：utils/assertion.py::assert_status_code (line 16)
+
+### 环境信息
+- **运行环境**：test
+- **Base URL**：https://jsonplaceholder.typicode.com
+- **Python 版本**：3.14.2
+- **操作系统**：Darwin arm64
+
+### 请求信息
+- **Method**：GET
+- **URL**：/posts/1
+
+### 响应信息
+- **Status Code**：200
+- **耗时**：0.249s
+- **Response Body**：
+  ```json
+  {"userId": 1, "id": 1, "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit", "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"}
+  ```
+
+### 报错信息
+```
+状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+  "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+}
+```
+
+### 完整堆栈
+```
+Traceback (most recent call last):
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/testcases/test_demo.py", line 27, in test_yaml_driven
+    assert_by_expect(response, case["expect"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/assertion.py", line 97, in assert_by_expect
+    assert_status_code(response, int(expect["status_code"]))
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/assertion.py", line 16, in assert_status_code
+    assert actual == expected_code, (
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+  "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+}
+```
+
+### 上下文变量快照
+```json
+{
+  "FLIGGY_CLIENT_ID": "filggy_3IEZ27oCuRqPMpQ",
+  "FLIGGY_CLIENT_SECRET": "9F!***",
+  "FLIGGY_ENV": "test-",
+  "timestamp": "1780045997",
+  "tomorrow": "2026-05-30"
+}
+```
+
+### 原因分析
+待分析
+
+### 复现步骤
+```bash
+python3 -m pytest testcases/ -v
+```
+
+---
+## BUG-009：断言失败演示 - 状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut fa
+
+- **发现时间**：2026-06-01 13:51:53
+- **严重程度**：🔴 高
+- **状态**：❌ 待修复
+
+### 报错位置
+- **用例名称**：断言失败演示
+- **用例文件**：data/assertion_failure_demo.yaml（步骤 1/1）
+- **触发位置**：utils/assertion.py::assert_status_code (line 16)
+
+### 环境信息
+- **运行环境**：test
+- **Base URL**：https://jsonplaceholder.typicode.com
+- **Python 版本**：3.14.2
+- **操作系统**：Darwin arm64
+
+### 请求信息
+- **Method**：GET
+- **URL**：https://jsonplaceholder.typicode.com/posts/1
+
+### 响应信息
+- **Status Code**：200
+- **耗时**：0.77s
+- **Response Body**：
+  ```json
+  {"userId": 1, "id": 1, "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit", "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"}
+  ```
+
+### 报错信息
+```
+状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+  "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+}
+```
+
+### 完整堆栈
+```
+Traceback (most recent call last):
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/case_executor.py", line 106, in execute_chain
+    assert_by_expect(response, resolve_variables(expect))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/assertion.py", line 97, in assert_by_expect
+    assert_status_code(response, int(expect["status_code"]))
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/assertion.py", line 16, in assert_status_code
+    assert actual == expected_code, (
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+  "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+}
+```
+
+### 上下文变量快照
+```json
+{
+  "FLIGGY_CLIENT_ID": "filggy_3IEZ27oCuRqPMpQ",
+  "FLIGGY_CLIENT_SECRET": "9F!***",
+  "FLIGGY_ENV": "test-",
+  "timestamp": "1780293113",
+  "tomorrow": "2026-06-02"
+}
+```
+
+### 原因分析
+待分析
+
+### 复现步骤
+```bash
+python3 -m pytest testcases/ -v
+```
+
+---
+## BUG-010：断言失败测试-YAML - 状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut fa
+
+- **发现时间**：2026-06-01 13:59:01
+- **严重程度**：🔴 高
+- **状态**：❌ 待修复
+
+### 报错位置
+- **用例名称**：断言失败测试-YAML
+- **用例文件**：data/test_demo.yaml（步骤 1/1）
+- **触发位置**：utils/assertion.py::assert_status_code (line 16)
+
+### 环境信息
+- **运行环境**：test
+- **Base URL**：https://jsonplaceholder.typicode.com
+- **Python 版本**：3.14.2
+- **操作系统**：Darwin arm64
+
+### 请求信息
+- **Method**：GET
+- **URL**：/posts/1
+
+### 响应信息
+- **Status Code**：200
+- **耗时**：0.208s
+- **Response Body**：
+  ```json
+  {"userId": 1, "id": 1, "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit", "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"}
+  ```
+
+### 报错信息
+```
+状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+  "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+}
+```
+
+### 完整堆栈
+```
+Traceback (most recent call last):
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/testcases/test_demo.py", line 63, in test_yaml_driven
+    assert_by_expect(response, case["expect"])
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/assertion.py", line 97, in assert_by_expect
+    assert_status_code(response, int(expect["status_code"]))
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/assertion.py", line 16, in assert_status_code
+    assert actual == expected_code, (
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+  "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+}
+```
+
+### 上下文变量快照
+```json
+{
+  "FLIGGY_CLIENT_ID": "filggy_3IEZ27oCuRqPMpQ",
+  "FLIGGY_CLIENT_SECRET": "9F!***",
+  "FLIGGY_ENV": "test-",
+  "timestamp": "1780293539",
+  "tomorrow": "2026-06-02"
+}
+```
+
+### 原因分析
+待分析
+
+### 复现步骤
+```bash
+python3 -m pytest testcases/ -v
+```
+
+---
+## BUG-011：断言失败演示 - 状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut fa
+
+- **发现时间**：2026-06-01 13:59:13
+- **严重程度**：🔴 高
+- **状态**：❌ 待修复
+
+### 报错位置
+- **用例名称**：断言失败演示
+- **用例文件**：data/assertion_failure_demo.yaml（步骤 1/1）
+- **触发位置**：utils/assertion.py::assert_status_code (line 16)
+
+### 环境信息
+- **运行环境**：test
+- **Base URL**：https://jsonplaceholder.typicode.com
+- **Python 版本**：3.14.2
+- **操作系统**：Darwin arm64
+
+### 请求信息
+- **Method**：GET
+- **URL**：https://jsonplaceholder.typicode.com/posts/1
+
+### 响应信息
+- **Status Code**：200
+- **耗时**：0.206s
+- **Response Body**：
+  ```json
+  {"userId": 1, "id": 1, "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit", "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"}
+  ```
+
+### 报错信息
+```
+状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+  "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+}
+```
+
+### 完整堆栈
+```
+Traceback (most recent call last):
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/case_executor.py", line 106, in execute_chain
+    assert_by_expect(response, resolve_variables(expect))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/assertion.py", line 97, in assert_by_expect
+    assert_status_code(response, int(expect["status_code"]))
+    ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/zhou/api_test_zhou/PythonProject/PythonProject/apitestzgs/utils/assertion.py", line 16, in assert_status_code
+    assert actual == expected_code, (
+           ^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 状态码不匹配: 期望 666, 实际 200
+响应内容: {
+  "userId": 1,
+  "id": 1,
+  "title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+  "body": "quia et suscipit\nsuscipit recusandae consequuntur expedita et cum\nreprehenderit molestiae ut ut quas totam\nnostrum rerum est autem sunt rem eveniet architecto"
+}
+```
+
+### 上下文变量快照
+```json
+{
+  "FLIGGY_CLIENT_ID": "filggy_3IEZ27oCuRqPMpQ",
+  "FLIGGY_CLIENT_SECRET": "9F!***",
+  "FLIGGY_ENV": "test-",
+  "timestamp": "1780293539",
+  "tomorrow": "2026-06-02",
+  "post_id": 1,
+  "post_user_id": 1,
+  "post_title": "sunt aut facere repellat provident occaecati excepturi optio reprehenderit",
+  "quotation_code": "2247552092###eJwXyDEOQiEQBcDDUPPzHrvsX3obT0FA2MRCKwtv4ZWNTjn4FIBIbjvCzpbrCsk6tuS5KdkjuLz5dlrimFhq4cQ5dJhNu0UVjAAmmqb7az+uz7XfnYlSjyJepLYuemhxumr/dQUF/LedohBPF4VSTPEF4h0kaw=="
+}
+```
+
+### 原因分析
+待分析
+
+### 复现步骤
+```bash
+python3 -m pytest testcases/ -v
+```
+
+---

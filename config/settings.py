@@ -50,3 +50,19 @@ def get_env_var(key: str, default: str = "") -> str:
     :return: 环境变量值
     """
     return os.environ.get(key, default)
+
+
+def get_bug_mode() -> str:
+    """
+    获取 Bug 模式
+
+    优先级：环境变量 > 配置文件 > 默认值
+
+    :return: "report" 表示记录 Bug 模式，"verify" 表示验证 Bug 模式
+    """
+    # 优先从环境变量读取
+    env_value = os.environ.get("BUG_MODE")
+    if env_value is not None:
+        return env_value.lower()
+    # 从配置文件读取
+    return _config.get("bug", {}).get("mode", "report")

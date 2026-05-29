@@ -7,15 +7,18 @@
     - extract 字段从响应中提取变量
     - base_url 字段指定独立域名
     - CSV 字段反序列化
+    - 断言失败自动记录 Bug 到 BUGFIX.md
 """
 import json
 import logging
+import traceback
 from typing import List
 
 import requests
 
 from utils.context import resolve_variables, extract_and_save
 from utils.assertion import assert_by_expect
+from utils.bug_reporter import bug_handler
 
 logger = logging.getLogger(__name__)
 
@@ -81,22 +84,54 @@ def execute_case(case: dict, http_client) -> requests.Response:
     return response
 
 
-def execute_chain(cases: List[dict], http_client):
+def execute_chain(cases: List[dict], http_client, case_file: str = ""):
     """
     串行执行多个用例（接口依赖编排）
 
     按顺序执行，每个用例执行完后自动提取变量，后续用例自动引用。
+    断言失败时自动记录 Bug 到 BUGFIX.md。
 
     :param cases: 用例列表
     :param http_client: HttpClient 实例
+    :param case_file: 用例数据文件名（用于 Bug 报告定位）
     """
-    for case in cases:
+    total = len(cases)
+    for index, case in enumerate(cases, start=1):
+        case_name = case.get("case_name", "未命名用例")
         response = execute_case(case, http_client)
-        # expect 已在 execute_case 内的 resolve_variables 中解析过，
-        # 但 execute_case 只处理请求相关字段，expect 需要单独解析（因为变量可能在前面步骤才提取）
+
         expect = case.get("expect")
         if expect:
-            assert_by_expect(response, resolve_variables(expect))
+            try:
+                assert_by_expect(response, resolve_variables(expect))
+            except (AssertionError, Exception) as exc:
+                # 收集请求信息
+                resolved = resolve_variables(case)
+                request_info = {
+                    "method": resolved.get("method", "GET").upper(),
+                    "url": _build_full_url(resolved),
+                    "headers": resolved.get("headers"),
+                    "body": resolved.get("json") or resolved.get("data"),
+                }
+
+                # 收集响应信息
+                response_info = _build_response_info(response)
+
+                # 自动记录 Bug
+                bug_handler(
+                    bug_title=f"{case_name} - {str(exc)[:80]}",
+                    severity="高",
+                    case_name=case_name,
+                    case_file=case_file,
+                    step_info=f"步骤 {index}/{total}",
+                    request_info=request_info,
+                    response_info=response_info,
+                    error_message=str(exc),
+                    traceback_str=traceback.format_exc(),
+                )
+
+                # 继续抛出异常，让 pytest 标记为 FAILED
+                raise
 
 
 def parse_csv_case(case: dict) -> dict:
@@ -117,3 +152,28 @@ def parse_csv_case(case: dict) -> dict:
             except json.JSONDecodeError:
                 pass
     return parsed
+
+
+# ==================== 内部辅助方法 ====================
+
+
+def _build_full_url(resolved_case: dict) -> str:
+    """根据用例构建完整 URL"""
+    url = resolved_case.get("url", "")
+    case_base_url = resolved_case.get("base_url")
+    if case_base_url:
+        url = case_base_url.rstrip("/") + "/" + url.lstrip("/")
+    return url
+
+
+def _build_response_info(response: requests.Response) -> dict:
+    """从 Response 对象提取响应信息"""
+    info = {
+        "status_code": response.status_code,
+        "elapsed": round(response.elapsed.total_seconds(), 3),
+    }
+    try:
+        info["body"] = response.json()
+    except ValueError:
+        info["body"] = response.text[:500]
+    return info

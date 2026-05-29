@@ -75,7 +75,8 @@ apitestzgs/
 │   ├── data_loader.py       # 多格式用例数据加载器
 │   ├── assertion.py         # 通用断言工具
 │   ├── context.py           # 全局上下文 + 变量解析器（${} 替换 + jsonpath 提取）
-│   └── logger.py            # 日志初始化（控制台 + 文件双输出）
+│   ├── logger.py            # 日志初始化（控制台 + 文件双输出）
+│   └── bug_reporter.py      # Bug 报告工具（自动记录 Bug 到 BUGFIX.md）
 ├── api/
 │   └── base_api.py          # 接口层基类
 ├── testcases/

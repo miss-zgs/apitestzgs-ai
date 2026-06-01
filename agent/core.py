@@ -5,7 +5,7 @@ Agent 核心模块
 负责：接收任务 → 调用 LLM → 选择工具 → 执行 → 判断是否完成。
 """
 import logging
-from typing import Optional
+from typing import Optional, AsyncGenerator
 
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, AIMessage
@@ -125,7 +125,7 @@ class TestAgent:
             )
         return self._graph
 
-    def chat(self, user_input: str) -> str:
+    def chat(self, user_input: str, timeout: int = 120) -> str:
         """
         与 Agent 对话
 
@@ -133,6 +133,7 @@ class TestAgent:
         自动维护对话历史，支持多轮上下文。
 
         :param user_input: 用户的自然语言输入
+        :param timeout: 超时时间（秒），默认 120 秒
         :return: Agent 的回复文本
         """
         # 每次新对话重置请求计数器
@@ -178,6 +179,55 @@ class TestAgent:
         """清空对话历史"""
         self._chat_history.clear()
         logger.info("对话历史已清空")
+
+    def chat_stream(self, user_input: str):
+        """
+        与 Agent 流式对话
+
+        发送用户输入，Agent 自主规划并执行，流式返回每一步结果。
+        适合需要实时看到进度的场景。
+
+        :param user_input: 用户的自然语言输入
+        :yield: 流式返回的文本片段
+        """
+        # 每次新对话重置请求计数器
+        reset_request_counter()
+
+        try:
+            # 构建消息列表（历史 + 当前输入）
+            messages = list(self._chat_history) + [HumanMessage(content=user_input)]
+
+            # 使用 stream 方法获取流式响应（LangGraph 的 stream 是同步生成器）
+            # chunk 结构: {"agent": {"messages": [...]}} 或 {"tools": {"messages": [...]}}
+            final_text = ""
+            for chunk in self.graph.stream(
+                {"messages": messages},
+                config={"recursion_limit": MAX_ITERATIONS * 2},
+            ):
+                for node_name, node_output in chunk.items():
+                    node_messages = node_output.get("messages", [])
+                    for message in node_messages:
+                        if isinstance(message, AIMessage) and message.content:
+                            # 提取文本内容（排除工具调用的 JSON）
+                            if isinstance(message.content, str):
+                                final_text = message.content
+                                yield message.content
+                            else:
+                                for part in message.content:
+                                    if isinstance(part, dict) and part.get("type") == "text":
+                                        text = part.get("text", "")
+                                        if text:
+                                            final_text = text
+                                            yield text
+
+            # 更新对话历史
+            self._chat_history.append(HumanMessage(content=user_input))
+            # 注意：流式模式下不保存完整的 AI 回复，因为它是分块返回的
+
+        except Exception as exc:
+            error_message = f"Agent 执行出错: {type(exc).__name__}: {str(exc)}"
+            logger.error(error_message, exc_info=True)
+            yield error_message
 
     def get_status(self) -> str:
         """获取 Agent 当前状态信息"""

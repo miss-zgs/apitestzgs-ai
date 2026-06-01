@@ -110,7 +110,7 @@ def check_json_not_empty(response_body_json: str, json_path: str) -> str:
 
     Args:
         response_body_json: HTTP 响应体的 JSON 字符串
-        json_path: JSONPath 表达式
+        json_path: JSONPath 表达式，如 $.id、$[0].id、$.data.list[0].name
 
     Returns:
         校验结果
@@ -119,7 +119,7 @@ def check_json_not_empty(response_body_json: str, json_path: str) -> str:
         response_body = _parse_response_body(response_body_json)
         matches = jsonpath_parse(json_path).find(response_body)
         if not matches:
-            return f"❌ JSONPath '{json_path}' 未匹配到值"
+            return f"❌ JSONPath '{json_path}' 未匹配到值\n响应体: {response_body_json[:200]}..."
 
         actual_value = matches[0].value
         if actual_value:
@@ -130,7 +130,7 @@ def check_json_not_empty(response_body_json: str, json_path: str) -> str:
     except ValueError as exc:
         return f"❌ {exc}"
     except Exception as exc:
-        return f"❌ 校验错误: {exc}"
+        return f"❌ 校验错误: {exc}\nJSONPath: {json_path}\n响应体: {response_body_json[:200]}..."
 
 
 @tool

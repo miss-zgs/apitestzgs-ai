@@ -31,7 +31,8 @@ MAX_REQUESTS_PER_TASK: int = 30
 TOOL_TIMEOUT: int = 30
 
 # 响应体最大返回长度（超过则截断，防止超 token）
-MAX_RESPONSE_LENGTH: int = 3000
+# 增加长度以支持更复杂的断言场景
+MAX_RESPONSE_LENGTH: int = 10000
 
 # ==================== 安全配置 ====================
 

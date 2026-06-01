@@ -87,16 +87,35 @@ def assert_by_expect(response, expect: dict):
     expect 格式示例:
     {
         "status_code": 200,
-        "body": {
-            "$.code": 0,
-            "$.data.name": "张三"
-        }
+        "body": {"$.code": 0, "$.data.name": "张三"},      # 字段值断言
+        "contains": {"$.data.message": "成功"},            # 包含断言
+        "type": {"$.data.id": int},                        # 类型断言
+        "not_empty": ["$.data.list", "$.data.name"]        # 非空断言
     }
     """
     if "status_code" in expect:
         assert_status_code(response, int(expect["status_code"]))
 
+    # 字段值断言
     body_checks = expect.get("body", {})
     if isinstance(body_checks, dict):
         for path, expected_value in body_checks.items():
             assert_json_field(response, path, expected_value)
+
+    # 包含断言：校验字段值包含指定关键词
+    contains_checks = expect.get("contains", {})
+    if isinstance(contains_checks, dict):
+        for path, keyword in contains_checks.items():
+            assert_json_contains(response, path, keyword)
+
+    # 类型断言：校验字段值的类型
+    type_checks = expect.get("type", {})
+    if isinstance(type_checks, dict):
+        for path, expected_type in type_checks.items():
+            assert_json_type(response, path, expected_type)
+
+    # 非空断言：校验字段值不为空
+    not_empty_checks = expect.get("not_empty", [])
+    if isinstance(not_empty_checks, list):
+        for path in not_empty_checks:
+            assert_json_not_empty(response, path)

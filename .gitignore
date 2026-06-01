@@ -21,7 +21,7 @@ allure-results/
 
 # 环境变量 / 密钥
 .env
-.env.*
+!.env.example
 
 # 系统文件
 .DS_Store

@@ -7,3 +7,9 @@ jsonpath-ng>=1.6.0
 openpyxl>=3.1.2
 python-dotenv>=1.0.0
 urllib3>=2.0.0
+
+# Agent 相关依赖
+langchain>=0.2.0              # Agent 框架
+langchain-anthropic>=0.3.0    # Anthropic/Claude 接口
+langgraph>=0.2.0              # LangGraph Agent 执行引擎
+pydantic>=2.0.0               # 数据校验

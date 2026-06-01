@@ -24,6 +24,13 @@
 - [ ] 添加 `bug` 配置项（auto_report、sensitive_fields）
 
 ### 新增功能
+- [x] AI Agent 能力接入（自然语言驱动测试）— v2.0.0 完成
 - [ ] 接口响应时间断言功能
 - [ ] 接口幂等性测试功能
 - [ ] 接口性能测试功能
+
+### Agent 后续增强
+- [ ] Agent Web 界面（Gradio/Streamlit）
+- [ ] Agent 长期记忆（历史用例经验库）
+- [ ] Agent 自主生成测试用例（从 API 文档）
+- [ ] Agent 钉钉机器人接入

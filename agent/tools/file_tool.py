@@ -18,8 +18,8 @@ _READABLE_DIRS = ["config", "data", "logs", "docs"]
 
 # 允许读取的根目录文件
 _READABLE_ROOT_FILES = [
-    "README.md", "CHANGELOG.md", "TODO.md", "BUGFIX.md",
-    "pytest.ini", "requirements.txt",
+    "README.md", "CHANGELOG.md", "TODO.md",
+    "requirements.txt",
 ]
 
 
@@ -29,7 +29,7 @@ def read_project_file(file_path: str) -> str:
 
     仅允许读取 config/、data/、logs/、docs/ 目录下的文件，
     以及项目根目录的 README.md、CHANGELOG.md 等文档文件。
-    出于安全考虑，不允许读取 utils/、agent/、testcases/ 等代码文件。
+    出于安全考虑，不允许读取 utils/、agent/ 等代码文件。
 
     Args:
         file_path: 文件相对路径，如 "config/config.yaml"、"data/test_demo.yaml"、"README.md"

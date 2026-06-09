@@ -5,7 +5,7 @@ Agent 核心模块
 负责：接收任务 → 调用 LLM → 选择工具 → 执行 → 判断是否完成。
 """
 import logging
-from typing import Optional, AsyncGenerator
+from typing import Optional
 
 from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import HumanMessage, AIMessage
@@ -31,6 +31,8 @@ from agent.tools.assertion_tool import (
 )
 from agent.tools.data_tool import load_test_cases, list_test_data_files
 from agent.tools.file_tool import read_project_file
+from agent.tools.report_tool import save_test_report
+from agent.tools.upload_tool import upload_file, list_uploadable_files
 from config.settings import get_base_url, get_current_env
 
 logger = logging.getLogger(__name__)
@@ -47,6 +49,9 @@ ALL_TOOLS = [
     load_test_cases,
     list_test_data_files,
     read_project_file,
+    save_test_report,
+    upload_file,
+    list_uploadable_files,
 ]
 
 
@@ -220,9 +225,14 @@ class TestAgent:
                                             final_text = text
                                             yield text
 
-            # 更新对话历史
+            # 更新对话历史（保存最后一段 AI 回复，保持多轮上下文）
             self._chat_history.append(HumanMessage(content=user_input))
-            # 注意：流式模式下不保存完整的 AI 回复，因为它是分块返回的
+            if final_text:
+                self._chat_history.append(AIMessage(content=final_text))
+
+            # 控制历史长度（保留最近 10 轮 = 20 条消息）
+            if len(self._chat_history) > 20:
+                self._chat_history = self._chat_history[-20:]
 
         except Exception as exc:
             error_message = f"Agent 执行出错: {type(exc).__name__}: {str(exc)}"

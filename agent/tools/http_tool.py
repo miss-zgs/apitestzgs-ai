@@ -6,6 +6,7 @@ HTTP 请求工具
 """
 import json
 import logging
+import threading
 
 from langchain_core.tools import tool
 
@@ -14,14 +15,16 @@ from agent.config import MAX_RESPONSE_LENGTH, MAX_REQUESTS_PER_TASK
 
 logger = logging.getLogger(__name__)
 
-# 模块级请求计数器（每次 Agent 任务重置）
+# 模块级请求计数器（线程安全）
+_request_lock = threading.Lock()
 _request_counter: int = 0
 
 
 def reset_request_counter():
     """重置请求计数器（每次新任务开始时调用）"""
     global _request_counter
-    _request_counter = 0
+    with _request_lock:
+        _request_counter = 0
 
 
 def get_request_count() -> int:
@@ -98,7 +101,8 @@ def send_http_request(
         elif method == "PATCH":
             response = client.patch(url, json_data=json_body_dict or None, **kwargs)
 
-        _request_counter += 1
+        with _request_lock:
+            _request_counter += 1
 
         # 格式化响应
         result_parts = [

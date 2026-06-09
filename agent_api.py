@@ -16,11 +16,14 @@ import os
 import time
 from asyncio import Semaphore
 
-from fastapi import FastAPI, HTTPException, Header
-from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, Header, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel, Field
 from utils.logger import setup_logging
 from agent.core import TestAgent
+from config.settings import get_project_root
 
 # 初始化日志
 setup_logging()
@@ -29,7 +32,16 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="API 测试 Agent",
     description="通过自然语言驱动接口自动化测试",
-    version="1.0.0",
+    version="2.1.0",
+)
+
+# CORS 中间件 — 允许前端跨域调用
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # 全局 Agent 实例
@@ -61,9 +73,13 @@ def verify_api_key(x_api_key: str) -> bool:
 # ==================== 请求/响应模型 ====================
 
 
+# 消息最大长度（防止 token 溢出）
+MAX_MESSAGE_LENGTH = 4000
+
+
 class ChatRequest(BaseModel):
     """对话请求"""
-    message: str
+    message: str = Field(..., min_length=1, max_length=MAX_MESSAGE_LENGTH, description="用户消息")
 
 
 class ChatResponse(BaseModel):
@@ -220,8 +236,9 @@ async def chat_stream(request: ChatRequest, x_api_key: str = Header(None)):
         try:
             agent = get_agent()
             for chunk in agent.chat_stream(request.message):
-                # SSE 格式: data: <content>\n\n
-                yield f"data: {chunk}\n\n"
+                # SSE 规范中 data 字段不能包含裸换行，需转义
+                escaped = chunk.replace('\n', '\\n')
+                yield f"data: {escaped}\n\n"
             # 发送结束标记
             yield "data: [DONE]\n\n"
         except Exception as exc:
@@ -240,12 +257,157 @@ async def chat_stream(request: ChatRequest, x_api_key: str = Header(None)):
     )
 
 
+# ==================== 文件管理接口 ====================
+
+# 允许上传的文件扩展名
+_ALLOWED_EXTENSIONS = {
+    ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp", ".svg",
+    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+    ".txt", ".csv", ".json", ".yaml", ".yml", ".xml",
+    ".zip", ".tar", ".gz", ".rar",
+    ".mp4", ".mp3", ".wav",
+}
+
+# 最大上传文件大小：50MB
+_MAX_UPLOAD_SIZE = 50 * 1024 * 1024
+
+
+@app.post("/upload")
+async def upload_file_to_data(
+    file: UploadFile = File(...),
+    x_api_key: str = Header(None),
+):
+    """
+    上传文件到 data/ 目录
+
+    前端将文件上传到此接口，文件会保存到 data/ 目录下，
+    之后 Agent 可通过 upload_file 工具将其上传到被测接口。
+    """
+    if not verify_api_key(x_api_key or ""):
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
+
+    if not file.filename:
+        raise HTTPException(status_code=400, detail="文件名不能为空")
+
+    # 安全：清理文件名，防止路径穿越
+    safe_filename = os.path.basename(file.filename)
+    if not safe_filename or safe_filename.startswith("."):
+        raise HTTPException(status_code=400, detail=f"非法文件名: {file.filename}")
+
+    # 扩展名检查
+    _, extension = os.path.splitext(safe_filename)
+    if extension.lower() not in _ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"不支持的文件类型: {extension}，允许: {', '.join(sorted(_ALLOWED_EXTENSIONS))}",
+        )
+
+    # 读取文件内容并检查大小
+    content = await file.read()
+    if len(content) > _MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=400,
+            detail=f"文件过大: {len(content) / 1024 / 1024:.1f}MB，最大 {_MAX_UPLOAD_SIZE // 1024 // 1024}MB",
+        )
+
+    if len(content) == 0:
+        raise HTTPException(status_code=400, detail="文件内容为空")
+
+    # 保存到 data/ 目录
+    data_dir = os.path.join(get_project_root(), "data")
+    os.makedirs(data_dir, exist_ok=True)
+    save_path = os.path.join(data_dir, safe_filename)
+
+    with open(save_path, "wb") as save_file:
+        save_file.write(content)
+
+    size_str = f"{len(content) / 1024:.1f}KB" if len(content) < 1024 * 1024 else f"{len(content) / 1024 / 1024:.1f}MB"
+    logger.info("文件已上传: data/%s (%s)", safe_filename, size_str)
+
+    return {
+        "message": f"文件已上传: data/{safe_filename}",
+        "filename": safe_filename,
+        "size": size_str,
+    }
+
+
+@app.get("/files")
+async def list_data_files(x_api_key: str = Header(None)):
+    """列出 data/ 目录下的所有文件"""
+    if not verify_api_key(x_api_key or ""):
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
+
+    data_dir = os.path.join(get_project_root(), "data")
+    if not os.path.isdir(data_dir):
+        return {"files": []}
+
+    files = []
+    for filename in sorted(os.listdir(data_dir)):
+        if filename.startswith("."):
+            continue
+        filepath = os.path.join(data_dir, filename)
+        if os.path.isfile(filepath):
+            size = os.path.getsize(filepath)
+            _, ext = os.path.splitext(filename)
+            size_str = f"{size / 1024:.1f}KB" if size < 1024 * 1024 else f"{size / 1024 / 1024:.1f}MB"
+            files.append({"name": filename, "size": size_str, "ext": ext})
+
+    return {"files": files}
+
+
+@app.delete("/files/{filename}")
+async def delete_data_file(filename: str, x_api_key: str = Header(None)):
+    """删除 data/ 目录下的指定文件"""
+    if not verify_api_key(x_api_key or ""):
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
+
+    safe_filename = os.path.basename(filename)
+    data_dir = os.path.join(get_project_root(), "data")
+    file_path = os.path.join(data_dir, safe_filename)
+
+    if not os.path.isfile(file_path):
+        raise HTTPException(status_code=404, detail=f"文件不存在: {safe_filename}")
+
+    os.remove(file_path)
+    logger.info("文件已删除: data/%s", safe_filename)
+    return {"message": f"已删除: data/{safe_filename}"}
+
+
 # ==================== 启动入口 ====================
+
+# 前端页面路由
+_WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
+
+
+@app.get("/web")
+async def web_ui():
+    """前端交互页面（动态注入 API_KEY）"""
+    index_path = os.path.join(_WEB_DIR, "index.html")
+    if not os.path.isfile(index_path):
+        raise HTTPException(status_code=404, detail="前端页面未找到")
+
+    with open(index_path, "r", encoding="utf-8") as html_file:
+        html_content = html_file.read()
+
+    # 将 .env 中的 API_KEY 动态注入到前端 JS
+    api_key = os.environ.get("API_KEY", "")
+    html_content = html_content.replace(
+        "const API_KEY = '';",
+        f"const API_KEY = '{api_key}';",
+    )
+
+    from fastapi.responses import HTMLResponse
+    return HTMLResponse(content=html_content)
+
+
+# 挂载静态资源（放在所有路由之后，避免拦截 API 路径）
+if os.path.isdir(_WEB_DIR):
+    app.mount("/static", StaticFiles(directory=_WEB_DIR), name="static")
 
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     logger.info("启动 Agent API 服务...")
     uvicorn.run(
         app,

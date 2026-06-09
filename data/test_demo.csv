@@ -1,3 +1,0 @@
-case_name,method,url,params,json,expect
-CSV-GET请求-查询帖子,GET,/posts/3,,,{"status_code": 200}
-CSV-POST请求-创建帖子,POST,/posts,,"{""title"":""CSV标题"",""body"":""CSV内容"",""userId"":3}","{""status_code"": 201}"

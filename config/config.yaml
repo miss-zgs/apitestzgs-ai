@@ -12,9 +12,6 @@ environments:
   prod:
     base_url: "https://api.example.com"
     timeout: 30
-  fliggy:
-    base_url: "https://${FLIGGY_ENV}gateway-travelswitch.fliggy.com"
-    timeout: 30
 
 # 当前使用的环境
 current_env: "test"
@@ -31,7 +28,3 @@ logging:
   level: "DEBUG"
   format: "%(asctime)s [%(levelname)s] %(name)s - %(message)s"
   show_data_loader: false   # 是否显示数据加载日志（true=显示，false=隐藏）
-
-# Bug 功能配置
-bug:
-  mode: "report"            # Bug 模式（report=记录 Bug, verify=验证 Bug）

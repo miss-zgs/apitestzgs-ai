@@ -6,7 +6,7 @@ _CONFIG_DIR = os.path.dirname(os.path.abspath(__file__))
 _CONFIG_PATH = os.path.join(_CONFIG_DIR, "config.yaml")
 _PROJECT_ROOT = os.path.dirname(_CONFIG_DIR)
 
-# 加载 .env 文件中的环境变量（如 FLIGGY_CLIENT_ID、FLIGGY_CLIENT_SECRET 等）
+# 加载 .env 文件中的环境变量
 load_dotenv(os.path.join(_PROJECT_ROOT, ".env"))
 
 
@@ -45,7 +45,7 @@ def get_env_var(key: str, default: str = "") -> str:
     """
     获取环境变量值（优先从 .env 文件加载）
 
-    :param key: 环境变量名，如 FLIGGY_CLIENT_ID
+    :param key: 环境变量名
     :param default: 不存在时的默认值
     :return: 环境变量值
     """

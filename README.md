@@ -1,6 +1,6 @@
 # API 接口自动化测试框架
 
-基于 Python + Pytest 的通用接口自动化测试框架，开箱即用。
+基于 Python + AI Agent 的接口自动化测试框架，通过**自然语言驱动测试**，开箱即用。
 
 ## 前置准备（新电脑必读）
 
@@ -41,11 +41,11 @@ FLIGGY_ENV=test-
 ### 4. 运行测试
 
 ```bash
-# 运行全部用例
-python3 run.py
+# Agent 命令行交互模式
+python3 agent_run.py
 
-# 只运行基础示例用例（不依赖 .env）
-python3 -m pytest testcases/test_demo.py::test_yaml_driven -v
+# Agent API 服务模式
+python3 agent_api.py
 ```
 
 ---
@@ -54,69 +54,201 @@ python3 -m pytest testcases/test_demo.py::test_yaml_driven -v
 
 - **统一请求封装** — GET/POST/PUT/DELETE/PATCH/文件上传，自动重试、日志记录、Session 管理
 - **多格式数据驱动** — 支持 YAML / JSON / Excel / CSV 四种用例格式，自动识别加载
-- **通用断言工具** — 状态码校验、jsonpath 字段提取校验、包含/类型/非空断言
+- **AI Agent 驱动** — 自然语言描述测试需求，Agent 自动执行并生成报告
+- **智能断言校验** — 状态码、jsonpath 字段值、包含/类型/非空等多种断言
 - **多环境切换** — 通过配置文件一键切换 dev / test / pre / prod
-- **接口依赖编排** — 支持接口间串行调用，前一个接口的返回值自动传给下一个
-- **变量提取与替换** — `${变量名}` 语法，从响应中用 jsonpath 提取值，后续接口自动引用
+- **接口依赖处理** — Agent 自动处理接口间依赖（登录获取 token → 带 token 查询）
 - **请求唯一 Key** — 每次请求自动生成唯一标识 `[R-xxxx]`，日志排查一搜即达
 - **日志双输出** — 控制台 + 按天切分的日志文件，支持 DEBUG/INFO 级别切换
-- **Allure 报告** — 支持生成美观的可视化测试报告
+- **测试报告** — 自动生成 HTML + JSON 双格式报告，含请求/响应详情
+
+## AI Agent 模式（自然语言驱动测试）
+
+本框架通过 **AI Agent** 驱动测试，用自然语言描述测试需求，Agent 自动完成用例加载、请求发送、断言校验、报告生成全流程。
+
+### Agent 核心能力
+
+| 能力 | 说明 |
+|------|------|
+| **自然语言理解** | 用中文描述测试需求，Agent 自动拆解为具体步骤 |
+| **多格式用例加载** | 支持 YAML / JSON / CSV / Excel（`.xlsx`/`.xls`）四种格式 |
+| **智能格式适配** | 用例字段名不必严格统一，Agent 能自动理解各种命名风格 |
+| **接口依赖处理** | 自动提取 token 等变量，处理接口间的串行依赖 |
+| **断言校验** | 状态码、jsonpath 字段值、包含、非空等多种断言 |
+| **失败分析** | 自动分析失败原因（网络/认证/参数/服务端/断言/环境） |
+| **报告生成** | 测试完成后自动生成 HTML + JSON 双格式报告，含请求/响应详情 |
+| **文件上传** | 支持 multipart/form-data 文件上传测试 |
+
+### 启动方式
+
+#### 方式一：命令行交互模式
+
+```bash
+python3 agent_run.py
+```
+
+启动后进入交互式对话，直接输入自然语言即可：
+
+```
+👤 你: 加载 test_demo.yaml 并执行所有用例
+🤖 Agent 思考中...
+🤖 Agent: ✅ 已执行 3 条用例，通过率 100%...
+
+👤 你: 测试 http://xxx.com/api/login，用 POST 发送 {"username":"admin","password":"123"}，期望 200
+🤖 Agent 思考中...
+🤖 Agent: ✅ 状态码 200，登录成功...
+```
+
+内置命令：
+
+| 命令 | 说明 |
+|------|------|
+| `/status` | 查看 Agent 状态（模型、环境、请求数等） |
+| `/clear` | 清空对话历史，开始新对话 |
+| `/help` | 显示帮助 |
+| `/quit` | 退出 |
+
+#### 方式二：API 服务模式
+
+```bash
+python3 agent_api.py
+# 或使用启动脚本
+bash start_api.sh
+```
+
+服务启动在 `http://0.0.0.0:8000`，提供 RESTful API：
+
+| 方法 | 端点 | 说明 |
+|------|------|------|
+| POST | `/chat` | 与 Agent 对话（同步） |
+| POST | `/chat-stream` | 与 Agent 流式对话（SSE） |
+| GET | `/status` | 查看 Agent 状态 |
+| POST | `/clear` | 清空对话历史 |
+| GET | `/tools` | 列出所有可用工具 |
+
+调用示例：
+
+```bash
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "加载 test_demo.yaml 执行全部用例并生成报告"}'
+```
+
+#### 方式三：代码调用
+
+```python
+from agent.core import TestAgent
+
+agent = TestAgent()
+response = agent.chat("测试 /api/users/1 接口，期望状态码 200")
+print(response)
+```
+
+### Agent 环境配置
+
+在 `.env` 文件中配置以下变量：
+
+```bash
+# LLM 配置（必填）
+AGENT_API_KEY=你的API密钥
+AGENT_BASE_URL=https://api.meai.cloud     # LLM 接口地址
+AGENT_MODEL=claude-opus-4-7           # 模型名称
+AGENT_TEMPERATURE=0.1                     # 温度参数
+
+# API 服务认证（选填）
+API_KEY=你的API服务密钥                     # 不配置则跳过认证
+```
+
+### 用例文件格式兼容
+
+Agent 对用例文件格式有很强的**兼容性**，不要求严格统一字段名。以下格式均可被正确识别：
+
+**标准格式**（推荐）：
+```yaml
+- case_name: "查询用户"
+  method: GET
+  url: /api/user/1
+  expect:
+    status_code: 200
+```
+
+**自定义格式**（同样支持）：
+```yaml
+config:
+  base_url: "http://your-api.com"
+auth_module:
+  - case_id: AUTH_001
+    name: "用户注册"
+    request:
+      method: POST
+      path: /auth/register
+      body: { username: "test" }
+    expected:
+      status_code: 200
+      response: { code: 200 }
+```
+
+> Agent 基于 LLM 理解用例内容，因此字段名差异（如 `url` vs `path`、`expect` vs `expected`）不影响执行。只需在对话中简要说明格式即可。
+
+### Agent 测试报告
+
+测试完成后自动生成报告到 `reports/` 目录：
+
+- **HTML 报告**：美观的可视化报告，包含通过率卡片、用例汇总表格、逐条断言详情
+- **JSON 报告**：结构化数据，适合 CI/CD 集成、钉钉通知等
+- **请求/响应详情**：每个用例可展开查看完整的请求头、请求体和响应体，方便排查问题
 
 ## 项目结构
 
 ```
-apitestzgs/
-├── config/
-│   ├── config.yaml          # 环境配置（域名、超时、重试、日志级别等）
-│   └── settings.py          # 配置读取工具
-├── utils/
-│   ├── http_client.py       # 统一 HTTP 请求封装（含唯一 Key、重试、日志）
-│   ├── case_executor.py     # 用例执行引擎（execute_case / execute_chain）
-│   ├── data_loader.py       # 多格式用例数据加载器
-│   ├── assertion.py         # 通用断言工具
-│   ├── context.py           # 全局上下文 + 变量解析器（${} 替换 + jsonpath 提取）
-│   ├── logger.py            # 日志初始化（控制台 + 文件双输出）
-│   └── bug_reporter.py      # Bug 报告工具（自动记录 Bug 到 BUGFIX.md）
-├── api/
-│   └── base_api.py          # 接口层基类
-├── testcases/
-│   ├── conftest.py          # pytest fixture（日志初始化、http_client、用例加载）
-│   └── test_demo.py         # 示例用例（数据驱动 + 依赖编排）
-├── data/
-│   ├── test_demo.yaml       # YAML 格式用例（独立接口）
-│   ├── test_demo.json       # JSON 格式用例
-│   ├── test_demo.csv        # CSV 格式用例
-│   ├── test_dependency.yaml # 接口依赖编排用例（串行 + 变量传递）
-│   └── test_fliggy_pickup.yaml # 飞猪接机查价+创单用例
-├── logs/                    # 日志文件目录（按天切分，自动保留 30 天）
-├── reports/                 # 测试报告输出目录
-├── example_usage.py         # HttpClient 使用示例（调试学习用）
-├── run.py                   # 一键执行入口
-├── pytest.ini               # pytest 配置
-└── requirements.txt         # 依赖清单
+apitestzgs-ai/
+├── agent/                       → AI Agent 核心模块
+│   ├── __init__.py
+│   ├── core.py                  # Agent 核心（ReAct 循环、工具编排、对话管理）
+│   ├── config.py                # Agent 配置（模型、温度、安全限制等）
+│   ├── prompts.py               # Agent 系统提示词模板
+│   └── tools/                   # Agent 工具集（6 个文件，12 个工具函数）
+│       ├── __init__.py          # 模块标识
+│       ├── http_tool.py         # HTTP 请求工具（send_http_request）
+│       ├── assertion_tool.py    # 断言校验工具（状态码/字段值/包含/非空/提取）
+│       ├── data_tool.py         # 用例数据加载工具（YAML/JSON/CSV/Excel）
+│       ├── file_tool.py         # 项目文件读取工具（只读，白名单控制）
+│       ├── report_tool.py       # 测试报告生成工具（HTML + JSON 双格式）
+│       └── upload_tool.py       # 文件上传工具（multipart/form-data）
+├── agent_run.py                 → Agent 命令行交互入口
+├── agent_api.py                 → Agent API 服务入口（FastAPI）
+├── start_api.sh                 → API 服务启动脚本（Gunicorn 多进程）
+├── config/                      → 环境配置
+│   ├── __init__.py
+│   ├── config.yaml              # 环境配置（域名、超时、重试、日志级别等）
+│   └── settings.py              # 配置读取工具
+├── utils/                       → 基础设施层（Agent 工具的底层依赖）
+│   ├── __init__.py
+│   ├── http_client.py           # HTTP 请求封装（重试、唯一 Key、Session、日志）
+│   ├── data_loader.py           # 多格式数据加载器（YAML/JSON/CSV/Excel）
+│   └── logger.py                # 日志初始化（控制台 + 按天切分文件双输出）
+├── data/                        → 用例数据文件目录
+│   └── 11.yaml                  # 示例：电商 Mock API 认证模块用例
+├── web/                         → 前端交互页面
+│   └── index.html               # Agent 对话式 UI（深色主题，SSE 流式输出）
+├── logs/                        → 日志输出目录（按天切分，自动保留 30 天）
+├── reports/                     → 测试报告输出目录（HTML + JSON）
+├── .env.example                 → 环境变量模板
+├── requirements.txt             → Python 依赖清单
+├── CHANGELOG.md                 → 版本更新日志
+├── TODO.md                      → 待办事项
+└── README.md                    → 项目说明文档
 ```
 
 ## 常用运行方式
 
 ```bash
-# 指定环境运行
-python3 run.py --env dev
+# Agent 命令行交互模式
+python3 agent_run.py
 
-# 按关键词筛选用例
-python3 run.py -k test_yaml
-
-# 只运行接口依赖编排用例
-python3 -m pytest testcases/test_demo.py::test_dependency_chain -v
-
-# 只运行飞猪接口用例
-python3 -m pytest testcases/test_demo.py::test_fliggy_pickup_price -v
-
-# 运行 HttpClient 使用示例（调试学习用）
-python3 example_usage.py
-
-# 生成 Allure 报告
-pytest testcases/ --alluredir=reports/allure-results
-allure serve reports/allure-results
+# Agent API 服务模式（启动后访问前端页面）
+python3 agent_api.py
+# 前端页面地址: http://localhost:8000/web
 
 # 查看当天日志
 cat logs/$(date +%Y-%m-%d).log
@@ -196,37 +328,6 @@ grep "R-a3f8" logs/2026-05-27.log
 
 第一行为表头，字段名与上述一致，后续每行为一条用例。
 
-## 接口依赖编排详解
-
-### 核心概念
-
-| 概念 | 语法 | 说明 |
-|------|------|------|
-| **变量提取** | `extract` | 从接口响应中用 jsonpath 提取值，存入全局上下文 |
-| **变量引用** | `${变量名}` | 在 url / headers / json / params 等任意位置引用已提取的变量 |
-| **全局上下文** | `context` | 整个测试过程中共享的变量池，所有用例都能读写 |
-
-### 工作流程
-
-```
-用例1 执行请求 → 响应 JSON → extract 提取变量存入 context
-                                         ↓
-用例2 读取 context → ${} 替换 → 执行请求 → extract 继续提取
-                                         ↓
-用例3 读取 context → ${} 替换 → 执行请求 → 断言验证
-```
-
-### 变量替换规则
-
-- **纯变量引用**：`"${user_id}"` → 保留原始类型（如 int `123`）
-- **字符串拼接**：`"Bearer ${token}"` → 字符串 `"Bearer abc123"`
-- **支持嵌套**：url、headers、params、json、expect 中均可使用
-
-### 用例文件位置
-
-- 独立接口用例：`data/test_demo.yaml`（用 parametrize 并行执行）
-- 依赖编排用例：`data/test_dependency.yaml`（串行顺序执行）
-
 ## 环境配置
 
 编辑 `config/config.yaml`：
@@ -296,22 +397,23 @@ grep "R-2358" logs/2026-05-27.log
 ## 常用命令速查
 
 ```bash
-# 运行全部用例
-python3 run.py
+# Agent 命令行交互模式
+python3 agent_run.py
 
-# 运行指定文件
-python3 -m pytest testcases/test_demo.py -v
+# Agent API 服务模式
+python3 agent_api.py
 
-# 运行指定用例
-python3 -m pytest testcases/test_demo.py::test_dependency_chain -v
+# 使用启动脚本
+bash start_api.sh
 
-# 按关键词筛选
-python3 -m pytest -k "yaml" -v
+# 查看当天日志
+cat logs/$(date +%Y-%m-%d).log
 
-# 生成 HTML 报告
-python3 -m pytest testcases/ --html=reports/report.html
+# 搜索某次请求的完整链路（用唯一 Key）
+grep "R-2358" logs/2026-05-27.log
 
-# 生成 Allure 报告
-python3 -m pytest testcases/ --alluredir=reports/allure-results
-allure serve reports/allure-results
+# API 调用示例
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message": "加载 data/11.yaml 执行全部用例并生成报告"}'
 ```

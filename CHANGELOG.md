@@ -1,5 +1,68 @@
 # 更新日志
 
+## v2.5.0（2026-06-11）
+
+**前端交互页面 + 文件上传**
+
+- **web/index.html**：新增 Agent 前端交互页面，深色主题，支持对话式交互
+- **SSE 流式输出**：对接 `/chat-stream` 接口，实时展示 Agent 思考过程
+- **文件上传**：输入框左侧 📎 按钮支持上传文件到 `data/` 目录，带上传进度和状态提示
+- **文件管理侧边栏**：📂 按钮打开文件管理面板，支持查看、使用、删除 `data/` 目录文件
+- **快捷指令**：首页提供常用操作按钮（查看数据文件、执行用例、快速测试、查看配置）
+- **工具集侧边栏**：可查看 Agent 可用的 12 个工具及说明
+- **状态指示**：顶部实时显示 Agent 连接状态、环境、模型信息
+- **agent_api.py**：新增 `/web`（前端页面）、`/upload`（文件上传）、`/files`（文件列表）、`DELETE /files/{name}`（删除文件）接口
+- **python-multipart**：新增依赖，FastAPI 文件上传支持
+
+## v2.4.0（2026-06-11）
+
+**项目瘦身 + 报告文件名优化**
+
+- **报告命名**：报告文件名从 `report_时间戳` 改为 `任务名称_时间戳`（如 `认证模块接口测试报告_20260611_152700.html`），便于区分不同任务
+- **项目瘦身**：移除 Pytest 模式遗留的 11 个文件（`utils/assertion.py`、`case_executor.py`、`context.py`、`bug_reporter.py`、`api/`、`testcases/`、`run.py`、`example_usage.py`、`pytest.ini`、`BUGFIX.md`），项目只保留 Agent 相关代码
+- **README 更新**：全面清理 Pytest 残留描述，项目定位调整为 AI Agent 测试框架
+- **TODO 清理**：移除已删模块相关的待办项，保留有效待办
+
+## v2.3.1（2026-06-11）
+
+**报告增加请求/响应详情 + README 补充 Agent 文档**
+
+- **report_tool**：每个用例详情新增「查看请求/响应」折叠区域，展示完整的请求头、请求体和响应体
+- **HTML 样式**：请求/响应左右分栏展示，深色代码块，支持点击折叠/展开，不影响原有布局
+- **数据结构**：cases 新增 `request_body`、`response_body`、`request_headers` 三个字段
+- **Prompt 优化**：提示 Agent 在每次请求后记录请求体和响应体，生成报告时必须填入
+- **README**：新增 AI Agent 模式完整文档，包含启动方式（CLI/API/代码调用）、环境配置、用例格式兼容说明、报告说明；更新项目结构，补充 Agent 模块目录
+
+## v2.3.0（2026-06-11）
+
+**文件上传能力**
+
+- **上传工具**：新增 `agent/tools/upload_tool.py`，Agent 可将 `data/` 目录下的文件通过 multipart/form-data 上传到指定接口
+- **文件列表**：提供 `list_uploadable_files` 工具，列出 `data/` 目录下可上传的文件及大小
+- **安全限制**：路径穿越防护、文件类型白名单（图片/文档/数据/压缩包等）、50MB 大小限制
+- **Prompt 更新**：工作流程新增文件上传能力说明，Agent 可识别用户上传意图并调用工具
+
+## v2.2.0（2026-06-11）
+
+**测试报告生成能力**
+
+- **报告工具**：新增 `agent/tools/report_tool.py`，Agent 测试完成后自动生成 HTML + JSON 双格式报告到 `reports/` 目录
+- **HTML 报告**：包含通过率卡片、用例汇总表格、逐条断言详情，界面美观，开箱即用
+- **JSON 报告**：结构化数据，方便程序化消费（CI/CD 集成、钉钉通知等）
+- **Prompt 优化**：工作流程新增第 7 步"生成报告"，Agent 测试完成后会主动调用报告工具
+
+## v2.1.1（2026-06-11）
+
+**部署加固 + 安全优化**
+
+- **依赖补全**：requirements.txt 补充 `fastapi`、`uvicorn`、`gunicorn`，所有依赖添加版本上界防止不兼容升级
+- **启动脚本优化**：start_api.sh 支持 `start/stop/restart/status` 命令，新增 PID 文件管理、graceful shutdown、日志写入文件、动态计算 workers 数
+- **CORS 支持**：agent_api.py 新增 CORS 中间件，支持通过 `CORS_ORIGINS` 环境变量配置允许的来源
+- **输入验证**：消息长度限制 1~4000 字符，防止 token 溢出
+- **对话历史修复**：chat_stream 流式模式下正确保存 AI 回复到对话历史，修复多轮对话上下文丢失问题
+- **线程安全**：http_tool 请求计数器使用 `threading.Lock` 保护，避免多进程竞态
+- **代码清理**：移除未使用的 `AsyncGenerator` 导入
+
 ## v2.1.0（2026-06-09）
 
 **Agent API 服务 + 流式响应 + 体验优化**

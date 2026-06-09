@@ -1,15 +1,19 @@
-requests>=2.31.0
-pytest>=7.4.0
-pytest-html>=4.1.0
-allure-pytest>=2.13.0
-PyYAML>=6.0.1
-jsonpath-ng>=1.6.0
-openpyxl>=3.1.2
-python-dotenv>=1.0.0
-urllib3>=2.0.0
+# 核心依赖
+requests>=2.31.0,<3.0.0           # HTTP 请求
+PyYAML>=6.0.1,<7.0.0             # YAML 解析
+jsonpath-ng>=1.6.0,<2.0.0        # JSONPath 提取
+python-dotenv>=1.0.0,<2.0.0      # 环境变量加载
+urllib3>=2.0.0,<3.0.0             # HTTP 底层库
+openpyxl>=3.1.2,<4.0.0           # Excel 读写
+
+# Web 服务依赖
+fastapi>=0.110.0,<1.0.0          # API 框架
+uvicorn[standard]>=0.29.0,<1.0.0 # ASGI 服务器
+gunicorn>=21.2.0,<23.0.0         # 多进程管理
+python-multipart>=0.0.9,<1.0.0   # FastAPI 文件上传支持
 
 # Agent 相关依赖
-langchain>=0.2.0              # Agent 框架
-langchain-anthropic>=0.3.0    # Anthropic/Claude 接口
-langgraph>=0.2.0              # LangGraph Agent 执行引擎
-pydantic>=2.0.0               # 数据校验
+langchain>=0.2.0,<0.4.0          # Agent 框架
+langchain-anthropic>=0.3.0,<0.5.0 # Anthropic/Claude 接口
+langgraph>=0.2.0,<0.4.0          # LangGraph Agent 执行引擎
+pydantic>=2.0.0,<3.0.0           # 数据校验

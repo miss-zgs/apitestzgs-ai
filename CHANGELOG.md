@@ -1,5 +1,19 @@
 # 更新日志
 
+## v2.1.0（2026-06-09）
+
+**Agent API 服务 + 流式响应 + 体验优化**
+
+- **API 服务**：新增 `agent_api.py`，基于 FastAPI 提供 RESTful API，支持 Gunicorn 多进程部署
+  - `POST /chat` — 同步对话接口（120s 超时）
+  - `POST /chat-stream` — SSE 流式响应接口，实时返回 Agent 执行进度
+  - `GET /` — 健康检查
+- **流式响应**：`agent/core.py` 新增 `chat_stream` 方法，基于 LangGraph `stream` 同步生成器实现
+- **启动脚本**：新增 `start_api.sh`，一键启动 Gunicorn + Uvicorn Worker（4 进程）
+- **响应体优化**：`MAX_RESPONSE_LENGTH` 从 3000 增加到 10000，支持更复杂的断言场景
+- **断言优化**：`check_json_not_empty` 失败时返回响应体片段，便于定位问题
+- **依赖新增**：`fastapi`、`uvicorn`、`gunicorn`
+
 ## v2.0.0（2026-06-01）
 
 **AI Agent 能力接入 — 自然语言驱动接口测试**

@@ -30,6 +30,8 @@
 - [ ] 接口性能测试功能
 
 ### Agent 后续增强
+- [x] Agent API 服务（FastAPI + Gunicorn）— v2.1.0 完成
+- [x] Agent 流式响应（SSE）— v2.1.0 完成
 - [ ] Agent Web 界面（Gradio/Streamlit）
 - [ ] Agent 长期记忆（历史用例经验库）
 - [ ] Agent 自主生成测试用例（从 API 文档）

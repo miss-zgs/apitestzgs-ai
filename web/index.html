@@ -607,8 +607,20 @@ async function checkStatus() {
 // ==================== 发送消息 ====================
 async function sendMessage() {
   const input = document.getElementById('messageInput');
-  const message = input.value.trim();
+  let message = input.value.trim();
   if (!message || isStreaming) return;
+
+  // 将已上传成功的文件名拼接到消息中，让 Agent 直接使用这些文件
+  const uploadedFiles = pendingFiles
+    .filter(f => f.status === 'uploaded')
+    .map(f => f.serverName || f.name);
+  if (uploadedFiles.length > 0) {
+    const fileList = uploadedFiles.map(name => `data/${name}`).join('、');
+    message = `请先加载以下用户刚上传的文件: ${fileList}\n\n用户需求: ${message}`;
+    // 清空已上传文件列表
+    pendingFiles = [];
+    renderFilePreview();
+  }
 
   // 隐藏欢迎区域
   const welcome = document.getElementById('welcomeArea');
@@ -708,7 +720,13 @@ function updateMessage(messageId, content) {
   const messageDiv = document.getElementById(messageId);
   if (!messageDiv) return;
   const body = messageDiv.querySelector('.message-body');
-  body.textContent = content;
+  // 将 reports/xxx.html 路径转为可点击链接
+  const escaped = escapeHtml(content);
+  const withLinks = escaped.replace(
+    /`?(reports\/[^\s`<>"]+\.html)`?/g,
+    '<a href="/$1" target="_blank" style="color:var(--accent);text-decoration:underline">📊 点击查看测试报告</a>'
+  );
+  body.innerHTML = withLinks;
   scrollToBottom();
 }
 

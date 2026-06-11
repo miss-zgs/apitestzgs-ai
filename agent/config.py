@@ -22,7 +22,7 @@ AGENT_TEMPERATURE: float = float(os.environ.get("AGENT_TEMPERATURE", "0.1"))
 # ==================== Agent 行为配置 ====================
 
 # 单次任务最大 ReAct 循环轮次（防止死循环）
-MAX_ITERATIONS: int = 15
+MAX_ITERATIONS: int = int(os.environ.get("MAX_ITERATIONS", "200"))
 
 # 单次任务最多发送的 HTTP 请求数
 MAX_REQUESTS_PER_TASK: int = 30

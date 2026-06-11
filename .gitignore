@@ -16,7 +16,6 @@ env/
 
 # 测试报告
 reports/
-*.html
 allure-results/
 
 # 环境变量 / 密钥

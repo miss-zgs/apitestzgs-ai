@@ -1,0 +1,195 @@
+# ============================================================
+# 电商 Mock API 全量接口测试用例
+# 服务地址: http://localhost:8001
+# 服务地址: http://39.105.64.243:8001
+# 预置用户: buyer1/buyer2/buyer3 (密码统一 123456)
+# 使用前请先运行 python reset_db.py 重置数据库
+# ============================================================
+
+config:
+#  base_url: http://localhost:8001
+  base_url: http://39.105.64.243:8001
+  default_timeout: 10
+  default_content_type: application/json
+
+# ============================================================
+# 1. 认证模块 /auth
+# ============================================================
+auth_module:
+
+  - case_id: AUTH_001
+    name: 用户注册-正向
+    description: 使用新用户名注册账号，应返回 user_id 和 username
+    api: POST /auth/register
+    need_auth: false
+    request:
+      method: POST
+      path: /auth/register
+      body:
+        username: newuser
+        password: abc123
+        phone: "13700000001"
+        email: newuser@test.com
+    expected:
+      status_code: 200
+      response:
+        code: 200
+        message: success
+        data:
+          username: newuser
+
+  - case_id: AUTH_002
+    name: 用户注册-用户名重复
+    description: 使用已存在的用户名注册，应返回 400
+    api: POST /auth/register
+    need_auth: false
+    precondition: AUTH_001 已执行
+    request:
+      method: POST
+      path: /auth/register
+      body:
+        username: newuser
+        password: abc123
+        phone: "13700000099"
+    expected:
+      status_code: 200
+      response:
+        code: 400
+        message: 用户名已存在
+
+  - case_id: AUTH_003
+    name: 用户注册-手机号重复
+    description: 使用已存在的手机号注册，应返回 400
+    api: POST /auth/register
+    need_auth: false
+    request:
+      method: POST
+      path: /auth/register
+      body:
+        username: anotheruser
+        password: abc123
+        phone: "13900001001"
+    expected:
+      status_code: 200
+      response:
+        code: 400
+        message: 手机号已注册
+
+  - case_id: AUTH_004
+    name: 用户登录-正向
+    description: 使用预置账号 buyer1 登录，应返回 access_token 和 refresh_token
+    api: POST /auth/login
+    need_auth: false
+    request:
+      method: POST
+      path: /auth/login
+      body:
+        username: buyer1
+        password: "123456"
+    expected:
+      status_code: 200
+      response:
+        code: 200
+        message: success
+        data:
+          access_token: not_empty
+          refresh_token: not_empty
+          token_type: bearer
+          user_id: 1
+
+  - case_id: AUTH_005
+    name: 用户登录-密码错误
+    description: 使用错误密码登录，应返回 401
+    api: POST /auth/login
+    need_auth: false
+    request:
+      method: POST
+      path: /auth/login
+      body:
+        username: buyer1
+        password: wrongpassword
+    expected:
+      status_code: 200
+      response:
+        code: 401
+
+  - case_id: AUTH_006
+    name: 用户登录-用户名不存在
+    description: 使用不存在的用户名登录，应返回 401
+    api: POST /auth/login
+    need_auth: false
+    request:
+      method: POST
+      path: /auth/login
+      body:
+        username: notexist
+        password: "123456"
+    expected:
+      status_code: 200
+      response:
+        code: 401
+
+  - case_id: AUTH_007
+    name: 刷新Token-正向
+    description: 使用有效的 refresh_token 刷新，应返回新的 access_token
+    api: POST /auth/refresh
+    need_auth: false
+    precondition: AUTH_004 获取 refresh_token
+    request:
+      method: POST
+      path: /auth/refresh
+      body:
+        refresh_token: "${AUTH_004.response.data.refresh_token}"
+    expected:
+      status_code: 200
+      response:
+        code: 200
+        data:
+          access_token: not_empty
+          token_type: bearer
+
+  - case_id: AUTH_008
+    name: 刷新Token-无效token
+    description: 使用无效的 refresh_token，应返回 401
+    api: POST /auth/refresh
+    need_auth: false
+    request:
+      method: POST
+      path: /auth/refresh
+      body:
+        refresh_token: invalid_token_string
+    expected:
+      status_code: 200
+      response:
+        code: 401
+
+  - case_id: AUTH_009
+    name: 查看个人信息-正向
+    description: 登录后查看个人信息，应返回用户详细信息
+    api: GET /auth/profile
+    need_auth: true
+    auth_user: buyer1
+    request:
+      method: GET
+      path: /auth/profile
+      headers:
+        Authorization: "Bearer ${AUTH_004.response.data.access_token}"
+    expected:
+      status_code: 200
+      response:
+        code: 200
+        data:
+          username: buyer1
+          phone: "13900001001"
+          email: buyer1@test.com
+
+  - case_id: AUTH_010
+    name: 查看个人信息-未登录
+    description: 不带 Token 访问，应返回 401
+    api: GET /auth/profile
+    need_auth: false
+    request:
+      method: GET
+      path: /auth/profile
+    expected:
+      status_code: 401

@@ -373,6 +373,25 @@ async def delete_data_file(filename: str, x_api_key: str = Header(None)):
     return {"message": f"已删除: data/{safe_filename}"}
 
 
+# ==================== 测试报告访问 ====================
+_REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
+os.makedirs(_REPORTS_DIR, exist_ok=True)
+
+
+@app.get("/reports/{filename:path}")
+async def serve_report(filename: str):
+    """提供测试报告文件访问（支持中文文件名）"""
+    from urllib.parse import unquote
+    decoded_name = unquote(filename)
+    file_path = os.path.join(_REPORTS_DIR, decoded_name)
+    if not os.path.abspath(file_path).startswith(os.path.abspath(_REPORTS_DIR)):
+        raise HTTPException(status_code=403, detail="禁止访问")
+    if not os.path.isfile(file_path):
+        raise HTTPException(status_code=404, detail="报告不存在")
+    media_type = "text/html" if file_path.endswith(".html") else "application/json"
+    return FileResponse(file_path, media_type=media_type)
+
+
 # ==================== 启动入口 ====================
 
 # 前端页面路由

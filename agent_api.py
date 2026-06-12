@@ -423,11 +423,6 @@ async def web_ui():
 if os.path.isdir(_WEB_DIR):
     app.mount("/static", StaticFiles(directory=_WEB_DIR), name="static")
 
-# 挂载 reports 目录，让用户可以通过浏览器直接查看测试报告
-_REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
-os.makedirs(_REPORTS_DIR, exist_ok=True)
-app.mount("/reports", StaticFiles(directory=_REPORTS_DIR, html=True), name="reports")
-
 
 if __name__ == "__main__":
     import uvicorn

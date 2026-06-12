@@ -11,14 +11,19 @@ API 端点:
     GET  /status    - 查看 Agent 状态
     POST /clear     - 清空对话历史
 """
+import asyncio
+import hmac
+import json
 import logging
 import os
 import time
 from asyncio import Semaphore
+from contextlib import asynccontextmanager
+from urllib.parse import unquote
 
 from fastapi import FastAPI, HTTPException, Header, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.responses import StreamingResponse, FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from utils.logger import setup_logging
@@ -29,45 +34,35 @@ from config.settings import get_project_root
 setup_logging()
 logger = logging.getLogger(__name__)
 
-app = FastAPI(
-    title="API 测试 Agent",
-    description="通过自然语言驱动接口自动化测试",
-    version="2.1.0",
-)
-
-# CORS 中间件 — 允许前端跨域调用
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 # 全局 Agent 实例
-agent: TestAgent = None
+_agent: TestAgent = None
 
 # 并发控制：限制最多 3 个并发请求
 request_semaphore = Semaphore(3)
 
+# 路径常量
+_WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
+_REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
+os.makedirs(_REPORTS_DIR, exist_ok=True)
+
 
 def get_agent() -> TestAgent:
     """获取 Agent 实例（懒加载）"""
-    global agent
-    if agent is None:
-        agent = TestAgent()
-        _ = agent.graph  # 触发初始化
+    global _agent
+    if _agent is None:
+        _agent = TestAgent()
+        _ = _agent.graph  # 触发初始化
         logger.info("Agent 已初始化")
-    return agent
+    return _agent
 
 
 def verify_api_key(x_api_key: str) -> bool:
-    """验证 API Key"""
+    """验证 API Key（常量时间比较，防止时序攻击）"""
     expected_key = os.environ.get("API_KEY")
     if not expected_key:
         logger.warning("API_KEY 未配置，跳过认证")
         return True
-    return x_api_key == expected_key
+    return hmac.compare_digest(x_api_key, expected_key)
 
 
 # ==================== 请求/响应模型 ====================
@@ -98,15 +93,36 @@ class StatusResponse(BaseModel):
     max_iterations: int
 
 
-# ==================== API 端点 ====================
+# ==================== 应用初始化 ====================
 
 
-@app.on_event("startup")
-async def startup_event():
-    """启动时初始化 Agent"""
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """应用生命周期：启动时初始化 Agent"""
     logger.info("Agent API 服务启动中...")
     get_agent()
     logger.info("Agent API 服务已启动")
+    yield
+
+
+app = FastAPI(
+    title="API 测试 Agent",
+    description="通过自然语言驱动接口自动化测试",
+    version="2.2.0",
+    lifespan=lifespan,
+)
+
+# CORS 中间件 — 允许前端跨域调用
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=os.environ.get("CORS_ORIGINS", "*").split(","),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# ==================== API 端点 ====================
 
 
 @app.get("/")
@@ -133,9 +149,9 @@ async def chat(request: ChatRequest, x_api_key: str = Header(None)):
     async with request_semaphore:
         start_time = time.time()
         try:
-            agent = get_agent()
-            # 增加超时时间，支持更复杂的测试场景
-            response = agent.chat(request.message, timeout=120)
+            ag = get_agent()
+            # 放到线程池执行，避免阻塞事件循环
+            response = await asyncio.to_thread(ag.chat, request.message, timeout=120)
             duration = time.time() - start_time
             logger.info(
                 "Chat request: %s... duration=%.1fs",
@@ -160,17 +176,17 @@ async def status(x_api_key: str = Header(None)):
     # 认证检查
     if not verify_api_key(x_api_key or ""):
         raise HTTPException(status_code=401, detail="Invalid or missing API key")
-    
+
     agent = get_agent()
     status_text = agent.get_status()
-    
+
     # 解析状态文本
     result = {}
     for line in status_text.split("\n"):
         if ":" in line:
             key, value = line.split(":", 1)
             result[key.strip()] = value.strip()
-    
+
     return StatusResponse(
         model=result.get("模型", ""),
         env=result.get("环境", ""),
@@ -187,7 +203,7 @@ async def clear(x_api_key: str = Header(None)):
     # 认证检查
     if not verify_api_key(x_api_key or ""):
         raise HTTPException(status_code=401, detail="Invalid or missing API key")
-    
+
     agent = get_agent()
     agent.clear_history()
     logger.info("对话历史已清空")
@@ -200,7 +216,7 @@ async def list_tools(x_api_key: str = Header(None)):
     # 认证检查
     if not verify_api_key(x_api_key or ""):
         raise HTTPException(status_code=401, detail="Invalid or missing API key")
-    
+
     from agent.core import ALL_TOOLS
     return {
         "tools": [
@@ -223,7 +239,7 @@ async def chat_stream(request: ChatRequest, x_api_key: str = Header(None)):
 
     请求头:
         X-API-Key: API 密钥（从环境变量 API_KEY 读取）
-    
+
     响应格式:
         text/event-stream (SSE)
     """
@@ -374,14 +390,11 @@ async def delete_data_file(filename: str, x_api_key: str = Header(None)):
 
 
 # ==================== 测试报告访问 ====================
-_REPORTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reports")
-os.makedirs(_REPORTS_DIR, exist_ok=True)
 
 
 @app.get("/reports/{filename:path}")
 async def serve_report(filename: str):
     """提供测试报告文件访问（支持中文文件名）"""
-    from urllib.parse import unquote
     decoded_name = unquote(filename)
     file_path = os.path.join(_REPORTS_DIR, decoded_name)
     if not os.path.abspath(file_path).startswith(os.path.abspath(_REPORTS_DIR)):
@@ -392,15 +405,12 @@ async def serve_report(filename: str):
     return FileResponse(file_path, media_type=media_type)
 
 
-# ==================== 启动入口 ====================
-
-# 前端页面路由
-_WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web")
+# ==================== 前端页面 ====================
 
 
 @app.get("/web")
 async def web_ui():
-    """前端交互页面（动态注入 API_KEY）"""
+    """前端交互页面（安全注入 API_KEY）"""
     index_path = os.path.join(_WEB_DIR, "index.html")
     if not os.path.isfile(index_path):
         raise HTTPException(status_code=404, detail="前端页面未找到")
@@ -408,20 +418,22 @@ async def web_ui():
     with open(index_path, "r", encoding="utf-8") as html_file:
         html_content = html_file.read()
 
-    # 将 .env 中的 API_KEY 动态注入到前端 JS
+    # 将 .env 中的 API_KEY 安全注入到前端 JS（json.dumps 防止 XSS）
     api_key = os.environ.get("API_KEY", "")
     html_content = html_content.replace(
         "const API_KEY = '';",
-        f"const API_KEY = '{api_key}';",
+        f"const API_KEY = {json.dumps(api_key)};",
     )
 
-    from fastapi.responses import HTMLResponse
     return HTMLResponse(content=html_content)
 
 
 # 挂载静态资源（放在所有路由之后，避免拦截 API 路径）
 if os.path.isdir(_WEB_DIR):
     app.mount("/static", StaticFiles(directory=_WEB_DIR), name="static")
+
+# 挂载 reports 目录，让用户可以通过浏览器直接查看测试报告
+app.mount("/reports", StaticFiles(directory=_REPORTS_DIR, html=True), name="reports")
 
 
 if __name__ == "__main__":
@@ -431,6 +443,6 @@ if __name__ == "__main__":
     uvicorn.run(
         app,
         host="0.0.0.0",
-        port=8002,
+        port=int(os.environ.get("PORT", 8002)),
         log_level="info",
     )

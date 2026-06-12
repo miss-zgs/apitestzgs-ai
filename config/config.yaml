@@ -1,16 +1,19 @@
 # 环境配置
+# base_url: 被测接口的基础地址，所有 API 请求会基于此地址发起
+# test 环境默认使用 jsonplaceholder.typicode.com（免费公共测试 API，仅用于演示，无需真实后端）
+# 请根据实际情况替换为你们的真实接口地址
 environments:
   dev:
-    base_url: "https://dev-api.example.com"
+    base_url: "https://dev-api.example.com"  # 开发环境，请替换为实际地址
     timeout: 30
   test:
-    base_url: "https://jsonplaceholder.typicode.com"
+    base_url: "https://jsonplaceholder.typicode.com"  # 演示用公共测试 API
     timeout: 30
   pre:
-    base_url: "https://pre-api.example.com"
+    base_url: "https://pre-api.example.com"  # 预发环境，请替换为实际地址
     timeout: 30
   prod:
-    base_url: "https://api.example.com"
+    base_url: "https://api.example.com"  # 生产环境，请替换为实际地址
     timeout: 30
 
 # 当前使用的环境

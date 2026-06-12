@@ -116,7 +116,7 @@ python3 agent_api.py
 bash start_api.sh
 ```
 
-服务启动在 `http://0.0.0.0:8000`，提供 RESTful API：
+服务启动在 `http://0.0.0.0:8002`，提供 RESTful API：
 
 | 方法 | 端点 | 说明 |
 |------|------|------|
@@ -129,7 +129,7 @@ bash start_api.sh
 调用示例：
 
 ```bash
-curl -X POST http://localhost:8000/chat \
+curl -X POST http://localhost:8002/chat \
   -H "Content-Type: application/json" \
   -d '{"message": "加载 test_demo.yaml 执行全部用例并生成报告"}'
 ```
@@ -248,7 +248,7 @@ python3 agent_run.py
 
 # Agent API 服务模式（启动后访问前端页面）
 python3 agent_api.py
-# 前端页面地址: http://localhost:8000/web
+# 前端页面地址: http://localhost:8002/web
 
 # 查看当天日志
 cat logs/$(date +%Y-%m-%d).log
@@ -413,7 +413,7 @@ cat logs/$(date +%Y-%m-%d).log
 grep "R-2358" logs/2026-05-27.log
 
 # API 调用示例
-curl -X POST http://localhost:8000/chat \
+curl -X POST http://localhost:8002/chat \
   -H "Content-Type: application/json" \
   -d '{"message": "加载 data/11.yaml 执行全部用例并生成报告"}'
 ```

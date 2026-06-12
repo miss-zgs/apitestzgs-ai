@@ -22,7 +22,7 @@ fi
 # 启动参数
 WORKERS=${WORKERS:-$(python3 -c "import os; print(min(os.cpu_count() * 2 + 1, 8))" 2>/dev/null || echo 4)}
 HOST=${HOST:-0.0.0.0}
-PORT=${PORT:-8000}
+PORT=${PORT:-8002}
 TIMEOUT=${GUNICORN_TIMEOUT:-120}
 GRACEFUL_TIMEOUT=${GRACEFUL_TIMEOUT:-30}
 
@@ -56,7 +56,7 @@ start_server() {
     echo "=========================================="
 
     # 启动 Gunicorn
-    exec gunicorn \
+    exec python3 -m gunicorn \
         -w "$WORKERS" \
         -k uvicorn.workers.UvicornWorker \
         -b "$HOST:$PORT" \
